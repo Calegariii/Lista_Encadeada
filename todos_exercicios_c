@@ -1,0 +1,1101 @@
+/*
+ * Estruturas de Dados - Lista Simplesmente Encadeada
+ * Exercicios 1 a 5 reunidos em um unico arquivo
+ * Aluno: Gabriel Calegari Rodrigues
+ *
+ * Cada exercicio foi mantido intacto e pode ser executado pelo menu principal.
+ * Como C nao possui namespaces, as variaveis globais (inicio/fim) e as funcoes
+ * auxiliares que se repetiam (liberarLista, buscarPorCodigo) receberam um
+ * sufixo com o numero do exercicio para evitar nomes duplicados.
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* -------- Funcoes auxiliares compartilhadas -------- */
+void limparBuffer(void) {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) { }
+}
+
+void lerLinha(char *destino, int tamanho) {
+    fgets(destino, tamanho, stdin);
+    destino[strcspn(destino, "\n")] = '\0';
+}
+
+
+/* ============================================================
+ * Exercicio 1 - Fila de chamados de suporte tecnico
+ *
+ * Cada novo chamado e inserido no FINAL da lista, preservando a
+ * ordem de abertura.
+ * ============================================================ */
+typedef struct Chamado {
+    int codigo;
+    char solicitante[50];
+    char descricao[100];
+    int prioridade;
+    struct Chamado *proximo;
+} Chamado;
+
+/* inicio1 guarda o primeiro no; fim1 guarda o ultimo (permite inserir no
+ * final sem percorrer toda a lista). Ambos NULL = lista vazia. */
+Chamado *inicio1 = NULL;
+Chamado *fim1 = NULL;
+
+/* Insere um chamado no final da lista */
+void registrarChamado(void) {
+    Chamado *novo = (Chamado *) malloc(sizeof(Chamado));
+    if (novo == NULL) {
+        printf("Erro: falha na alocacao de memoria.\n");
+        return;
+    }
+
+    printf("Codigo: ");
+    scanf("%d", &novo->codigo);
+    limparBuffer();
+    printf("Solicitante: ");
+    fgets(novo->solicitante, sizeof(novo->solicitante), stdin);
+    novo->solicitante[strcspn(novo->solicitante, "\n")] = '\0';
+    printf("Descricao: ");
+    fgets(novo->descricao, sizeof(novo->descricao), stdin);
+    novo->descricao[strcspn(novo->descricao, "\n")] = '\0';
+    printf("Prioridade (1-5): ");
+    scanf("%d", &novo->prioridade);
+    limparBuffer();
+
+    novo->proximo = NULL;          /* novo sera o ultimo, aponta para NULL */
+
+    if (inicio1 == NULL) {         /* lista vazia: novo e o primeiro E o ultimo */
+        inicio1 = novo;
+        fim1 = novo;
+    } else {                       /* lista com elementos: encadeia no fim */
+        fim1->proximo = novo;      /* o antigo ultimo aponta para o novo */
+        fim1 = novo;               /* fim passa a ser o novo */
+    }
+    printf("Chamado registrado.\n");
+}
+
+/* Lista todos os chamados na ordem de abertura */
+void listarChamados(void) {
+    Chamado *atual = inicio1;      /* percorre usando um ponteiro auxiliar */
+    if (atual == NULL) {
+        printf("Nenhum chamado registrado.\n");
+        return;
+    }
+    printf("\n--- Chamados ---\n");
+    while (atual != NULL) {        /* para quando encontrar NULL */
+        printf("Codigo: %d | Solicitante: %s | Prioridade: %d\n",
+               atual->codigo, atual->solicitante, atual->prioridade);
+        printf("  Descricao: %s\n", atual->descricao);
+        atual = atual->proximo;    /* avanca para o proximo no */
+    }
+}
+
+/* Busca um chamado pelo codigo */
+void buscarChamado(void) {
+    int codigo;
+    Chamado *atual = inicio1;
+    printf("Codigo a buscar: ");
+    scanf("%d", &codigo);
+    limparBuffer();
+
+    while (atual != NULL) {
+        if (atual->codigo == codigo) {
+            printf("Encontrado: %s | Prioridade: %d\n",
+                   atual->solicitante, atual->prioridade);
+            return;
+        }
+        atual = atual->proximo;
+    }
+    printf("Chamado nao encontrado.\n");
+}
+
+/* Conta quantos chamados existem percorrendo a lista */
+void contarChamados(void) {
+    int total = 0;
+    Chamado *atual = inicio1;
+    while (atual != NULL) {
+        total++;
+        atual = atual->proximo;
+    }
+    printf("Total de chamados: %d\n", total);
+}
+
+/* Remove o primeiro chamado da lista */
+void removerPrimeiro(void) {
+    if (inicio1 == NULL) {         /* teste: lista vazia */
+        printf("Lista vazia. Nada a remover.\n");
+        return;
+    }
+
+    Chamado *removido = inicio1;   /* guarda o endereco antes de remover */
+    inicio1 = inicio1->proximo;    /* inicio passa a apontar para o segundo */
+
+    if (inicio1 == NULL) {         /* teste: era o unico elemento */
+        fim1 = NULL;               /* inicio e fim viram NULL = lista vazia */
+    }
+
+    free(removido);                /* libera a memoria do no removido */
+    printf("Primeiro chamado removido.\n");
+}
+
+/* Libera toda a memoria antes de encerrar */
+void liberarLista1(void) {
+    Chamado *atual = inicio1;
+    while (atual != NULL) {
+        Chamado *proximo = atual->proximo;  /* guarda o proximo ANTES do free */
+        free(atual);
+        atual = proximo;
+    }
+    inicio1 = NULL;
+    fim1 = NULL;
+}
+
+/* Menu do Exercicio 1 */
+void exercicio1(void) {
+    int opcao;
+    do {
+        printf("\n=== CHAMADOS DE SUPORTE ===\n");
+        printf("1 - Registrar chamado\n");
+        printf("2 - Listar chamados\n");
+        printf("3 - Buscar por codigo\n");
+        printf("4 - Quantidade de chamados\n");
+        printf("5 - Remover primeiro chamado\n");
+        printf("0 - Encerrar\n");
+        printf("Opcao: ");
+        scanf("%d", &opcao);
+        limparBuffer();
+
+        switch (opcao) {
+            case 1: registrarChamado(); break;
+            case 2: listarChamados(); break;
+            case 3: buscarChamado(); break;
+            case 4: contarChamados(); break;
+            case 5: removerPrimeiro(); break;
+            case 0: liberarLista1(); printf("Encerrando...\n"); break;
+            default: printf("Opcao invalida.\n");
+        }
+    } while (opcao != 0);
+}
+
+
+/* ============================================================
+ * Exercicio 2 - Cadastro de imoveis de uma imobiliaria
+ *
+ * Permite inserir, buscar, alterar e remover imoveis em qualquer
+ * posicao. Usa os ponteiros auxiliares atual e anterior.
+ * ============================================================ */
+typedef struct Imovel {
+    int codigo;
+    char bairro[40];
+    char tipo[30];
+    int dormitorios;
+    float valor;
+    struct Imovel *proximo;
+} Imovel;
+
+Imovel *inicio2 = NULL;
+Imovel *fim2 = NULL;
+
+void inserirImovel(void) {
+    Imovel *novo = (Imovel *) malloc(sizeof(Imovel));
+    if (novo == NULL) {
+        printf("Erro de alocacao.\n");
+        return;
+    }
+    printf("Codigo: ");
+    scanf("%d", &novo->codigo);
+    limparBuffer();
+    printf("Bairro: ");
+    lerLinha(novo->bairro, sizeof(novo->bairro));
+    printf("Tipo: ");
+    lerLinha(novo->tipo, sizeof(novo->tipo));
+    printf("Dormitorios: ");
+    scanf("%d", &novo->dormitorios);
+    printf("Valor: ");
+    scanf("%f", &novo->valor);
+    limparBuffer();
+
+    novo->proximo = NULL;
+    if (inicio2 == NULL) {
+        inicio2 = novo;
+        fim2 = novo;
+    } else {
+        fim2->proximo = novo;
+        fim2 = novo;
+    }
+    printf("Imovel inserido.\n");
+}
+
+void listarImoveis(void) {
+    Imovel *atual = inicio2;
+    if (atual == NULL) {
+        printf("Catalogo vazio.\n");
+        return;
+    }
+    printf("\n--- Imoveis ---\n");
+    while (atual != NULL) {
+        printf("Codigo: %d | %s | %s | %d dorm | R$ %.2f\n",
+               atual->codigo, atual->bairro, atual->tipo,
+               atual->dormitorios, atual->valor);
+        atual = atual->proximo;
+    }
+}
+
+void buscarImovel(void) {
+    int codigo;
+    Imovel *atual = inicio2;
+    printf("Codigo a buscar: ");
+    scanf("%d", &codigo);
+    limparBuffer();
+
+    while (atual != NULL && atual->codigo != codigo) {
+        atual = atual->proximo;
+    }
+    if (atual == NULL) {
+        printf("Imovel nao encontrado.\n");
+    } else {
+        printf("Encontrado: %s | %s | R$ %.2f\n",
+               atual->bairro, atual->tipo, atual->valor);
+    }
+}
+
+void listarPorBairro(void) {
+    char bairro[40];
+    Imovel *atual = inicio2;
+    int achou = 0;
+    printf("Bairro: ");
+    lerLinha(bairro, sizeof(bairro));
+
+    while (atual != NULL) {
+        if (strcmp(atual->bairro, bairro) == 0) {
+            printf("Codigo: %d | %s | R$ %.2f\n",
+                   atual->codigo, atual->tipo, atual->valor);
+            achou = 1;
+        }
+        atual = atual->proximo;
+    }
+    if (!achou) {
+        printf("Nenhum imovel nesse bairro.\n");
+    }
+}
+
+void alterarValor(void) {
+    int codigo;
+    float novoValor;
+    Imovel *atual = inicio2;
+    printf("Codigo do imovel: ");
+    scanf("%d", &codigo);
+    limparBuffer();
+
+    while (atual != NULL && atual->codigo != codigo) {
+        atual = atual->proximo;
+    }
+    if (atual == NULL) {
+        printf("Imovel nao encontrado.\n");
+        return;
+    }
+    printf("Novo valor: ");
+    scanf("%f", &novoValor);
+    limparBuffer();
+    atual->valor = novoValor;
+    printf("Valor atualizado.\n");
+}
+
+/* Remocao em qualquer posicao: usa atual e anterior */
+void removerImovel(void) {
+    int codigo;
+    Imovel *atual = inicio2;
+    Imovel *anterior = NULL;   /* anterior permanece NULL enquanto no inicio */
+
+    if (inicio2 == NULL) {
+        printf("Catalogo vazio.\n");
+        return;
+    }
+    printf("Codigo a remover: ");
+    scanf("%d", &codigo);
+    limparBuffer();
+
+    while (atual != NULL && atual->codigo != codigo) {
+        anterior = atual;          /* anterior acompanha o percurso */
+        atual = atual->proximo;
+    }
+
+    if (atual == NULL) {
+        printf("Imovel nao encontrado.\n");
+        return;
+    }
+
+    if (anterior == NULL) {
+        /* Removendo o PRIMEIRO elemento */
+        inicio2 = atual->proximo;
+    } else {
+        /* Removendo do MEIO ou do FIM: salta o no atual */
+        anterior->proximo = atual->proximo;
+    }
+
+    if (atual == fim2) {
+        /* Se removeu o ULTIMO, atualiza o fim */
+        fim2 = anterior;
+    }
+
+    free(atual);                   /* libera o no removido */
+    printf("Imovel removido.\n");
+}
+
+void exibirMaiorValor(void) {
+    Imovel *atual = inicio2;
+    Imovel *maior = inicio2;
+    if (inicio2 == NULL) {
+        printf("Catalogo vazio.\n");
+        return;
+    }
+    while (atual != NULL) {
+        if (atual->valor > maior->valor) {
+            maior = atual;
+        }
+        atual = atual->proximo;
+    }
+    printf("Maior valor: codigo %d | %s | R$ %.2f\n",
+           maior->codigo, maior->bairro, maior->valor);
+}
+
+void liberarLista2(void) {
+    Imovel *atual = inicio2;
+    while (atual != NULL) {
+        Imovel *proximo = atual->proximo;
+        free(atual);
+        atual = proximo;
+    }
+    inicio2 = NULL;
+    fim2 = NULL;
+}
+
+/* Menu do Exercicio 2 */
+void exercicio2(void) {
+    int opcao;
+    do {
+        printf("\n=== IMOBILIARIA ===\n");
+        printf("1 - Inserir imovel\n");
+        printf("2 - Listar imoveis\n");
+        printf("3 - Buscar por codigo\n");
+        printf("4 - Listar por bairro\n");
+        printf("5 - Alterar valor\n");
+        printf("6 - Remover por codigo\n");
+        printf("7 - Imovel de maior valor\n");
+        printf("0 - Encerrar\n");
+        printf("Opcao: ");
+        scanf("%d", &opcao);
+        limparBuffer();
+
+        switch (opcao) {
+            case 1: inserirImovel(); break;
+            case 2: listarImoveis(); break;
+            case 3: buscarImovel(); break;
+            case 4: listarPorBairro(); break;
+            case 5: alterarValor(); break;
+            case 6: removerImovel(); break;
+            case 7: exibirMaiorValor(); break;
+            case 0: liberarLista2(); printf("Encerrando...\n"); break;
+            default: printf("Opcao invalida.\n");
+        }
+    } while (opcao != 0);
+}
+
+
+/* ============================================================
+ * Exercicio 3 - Controle de estoque de produtos
+ *
+ * Mantem os produtos em ordem crescente de codigo (insercao
+ * ordenada). Usa os ponteiros auxiliares novo, atual e anterior.
+ * ============================================================ */
+typedef struct Produto {
+    int codigo;
+    char descricao[50];
+    int quantidade;
+    float preco;
+    struct Produto *proximo;
+} Produto;
+
+Produto *inicio3 = NULL;
+
+Produto *buscarProdutoPorCodigo(int codigo, Produto **anteriorSaida) {
+    Produto *atual = inicio3;
+    Produto *anterior = NULL;
+    while (atual != NULL && atual->codigo < codigo) {
+        anterior = atual;
+        atual = atual->proximo;
+    }
+    if (anteriorSaida != NULL) {
+        *anteriorSaida = anterior;
+    }
+    return atual;
+}
+
+/* Insere mantendo a ordem crescente do codigo */
+void inserirProduto(void) {
+    Produto *novo = (Produto *) malloc(sizeof(Produto));
+    if (novo == NULL) {
+        printf("Erro de alocacao.\n");
+        return;
+    }
+    printf("Codigo: ");
+    scanf("%d", &novo->codigo);
+    limparBuffer();
+    printf("Descricao: ");
+    lerLinha(novo->descricao, sizeof(novo->descricao));
+    printf("Quantidade: ");
+    scanf("%d", &novo->quantidade);
+    printf("Preco: ");
+    scanf("%f", &novo->preco);
+    limparBuffer();
+
+    Produto *anterior = NULL;
+    Produto *atual = buscarProdutoPorCodigo(novo->codigo, &anterior);
+
+    if (atual != NULL && atual->codigo == novo->codigo) {
+        printf("Erro: codigo duplicado.\n");
+        free(novo);
+        return;
+    }
+
+    /* Ligacoes do desafio de raciocinio do Exercicio 3 */
+    novo->proximo = atual;         /* novo aponta para quem vem depois */
+    if (anterior == NULL) {
+        /* Inserindo no INICIO (codigo menor que todos) */
+        inicio3 = novo;
+    } else {
+        anterior->proximo = novo;  /* anterior aponta para o novo */
+    }
+    printf("Produto inserido.\n");
+}
+
+void registrarEntrada(void) {
+    int codigo, qtd;
+    Produto *atual;
+    printf("Codigo: ");
+    scanf("%d", &codigo);
+    limparBuffer();
+    atual = buscarProdutoPorCodigo(codigo, NULL);
+    if (atual == NULL || atual->codigo != codigo) {
+        printf("Produto nao encontrado.\n");
+        return;
+    }
+    printf("Unidades de entrada: ");
+    scanf("%d", &qtd);
+    limparBuffer();
+    atual->quantidade += qtd;
+    printf("Entrada registrada. Novo estoque: %d\n", atual->quantidade);
+}
+
+void registrarSaida(void) {
+    int codigo, qtd;
+    Produto *atual;
+    printf("Codigo: ");
+    scanf("%d", &codigo);
+    limparBuffer();
+    atual = buscarProdutoPorCodigo(codigo, NULL);
+    if (atual == NULL || atual->codigo != codigo) {
+        printf("Produto nao encontrado.\n");
+        return;
+    }
+    printf("Unidades de saida: ");
+    scanf("%d", &qtd);
+    limparBuffer();
+    if (qtd > atual->quantidade) {
+        printf("Erro: saida maior que o estoque (%d).\n", atual->quantidade);
+        return;
+    }
+    atual->quantidade -= qtd;
+    printf("Saida registrada. Novo estoque: %d\n", atual->quantidade);
+}
+
+void buscarProduto(void) {
+    int codigo;
+    Produto *atual;
+    printf("Codigo a buscar: ");
+    scanf("%d", &codigo);
+    limparBuffer();
+    atual = buscarProdutoPorCodigo(codigo, NULL);
+    if (atual == NULL || atual->codigo != codigo) {
+        printf("Produto nao encontrado.\n");
+    } else {
+        printf("%d | %s | %d un | R$ %.2f\n",
+               atual->codigo, atual->descricao, atual->quantidade, atual->preco);
+    }
+}
+
+void listarProdutos(void) {
+    Produto *atual = inicio3;
+    if (atual == NULL) {
+        printf("Estoque vazio.\n");
+        return;
+    }
+    printf("\n--- Produtos (ordem crescente de codigo) ---\n");
+    while (atual != NULL) {
+        printf("%d | %s | %d un | R$ %.2f\n",
+               atual->codigo, atual->descricao, atual->quantidade, atual->preco);
+        atual = atual->proximo;
+    }
+}
+
+void listarEstoqueBaixo(void) {
+    Produto *atual = inicio3;
+    int achou = 0;
+    while (atual != NULL) {
+        if (atual->quantidade < 5) {
+            printf("%d | %s | %d un\n",
+                   atual->codigo, atual->descricao, atual->quantidade);
+            achou = 1;
+        }
+        atual = atual->proximo;
+    }
+    if (!achou) {
+        printf("Nenhum produto com menos de 5 unidades.\n");
+    }
+}
+
+/* Remove somente produtos com estoque zero */
+void removerZerados(void) {
+    Produto *atual = inicio3;
+    Produto *anterior = NULL;
+    int removidos = 0;
+
+    while (atual != NULL) {
+        if (atual->quantidade == 0) {
+            Produto *removido = atual;
+            if (anterior == NULL) {
+                inicio3 = atual->proximo;
+                atual = inicio3;
+            } else {
+                anterior->proximo = atual->proximo;
+                atual = atual->proximo;
+            }
+            free(removido);
+            removidos++;
+        } else {
+            anterior = atual;
+            atual = atual->proximo;
+        }
+    }
+    printf("Produtos removidos: %d\n", removidos);
+}
+
+void liberarLista3(void) {
+    Produto *atual = inicio3;
+    while (atual != NULL) {
+        Produto *proximo = atual->proximo;
+        free(atual);
+        atual = proximo;
+    }
+    inicio3 = NULL;
+}
+
+/* Menu do Exercicio 3 */
+void exercicio3(void) {
+    int opcao;
+    do {
+        printf("\n=== ESTOQUE ===\n");
+        printf("1 - Inserir produto\n");
+        printf("2 - Registrar entrada\n");
+        printf("3 - Registrar saida\n");
+        printf("4 - Buscar produto\n");
+        printf("5 - Listar produtos\n");
+        printf("6 - Produtos com menos de 5 unidades\n");
+        printf("7 - Remover produtos zerados\n");
+        printf("0 - Encerrar\n");
+        printf("Opcao: ");
+        scanf("%d", &opcao);
+        limparBuffer();
+
+        switch (opcao) {
+            case 1: inserirProduto(); break;
+            case 2: registrarEntrada(); break;
+            case 3: registrarSaida(); break;
+            case 4: buscarProduto(); break;
+            case 5: listarProdutos(); break;
+            case 6: listarEstoqueBaixo(); break;
+            case 7: removerZerados(); break;
+            case 0: liberarLista3(); printf("Encerrando...\n"); break;
+            default: printf("Opcao invalida.\n");
+        }
+    } while (opcao != 0);
+}
+
+
+/* ============================================================
+ * Exercicio 4 - Playlist de musicas
+ *
+ * Insere, remove e reposiciona faixas. Destaca a insercao APOS um
+ * no especifico e a movimentacao de uma musica para o inicio.
+ * ============================================================ */
+typedef struct Musica {
+    int codigo;
+    char titulo[50];
+    char artista[50];
+    int duracaoSegundos;
+    struct Musica *proximo;
+} Musica;
+
+Musica *inicio4 = NULL;
+Musica *fim4 = NULL;
+
+Musica *buscarMusicaPorCodigo(int codigo, Musica **anteriorSaida) {
+    Musica *atual = inicio4;
+    Musica *anterior = NULL;
+    while (atual != NULL && atual->codigo != codigo) {
+        anterior = atual;
+        atual = atual->proximo;
+    }
+    if (anteriorSaida != NULL) {
+        *anteriorSaida = anterior;
+    }
+    return atual;
+}
+
+/* Adiciona uma musica ao final */
+void adicionarMusica(void) {
+    Musica *novo = (Musica *) malloc(sizeof(Musica));
+    if (novo == NULL) {
+        printf("Erro de alocacao.\n");
+        return;
+    }
+    printf("Codigo: ");
+    scanf("%d", &novo->codigo);
+    limparBuffer();
+    printf("Titulo: ");
+    lerLinha(novo->titulo, sizeof(novo->titulo));
+    printf("Artista: ");
+    lerLinha(novo->artista, sizeof(novo->artista));
+    printf("Duracao (segundos): ");
+    scanf("%d", &novo->duracaoSegundos);
+    limparBuffer();
+
+    novo->proximo = NULL;
+    if (inicio4 == NULL) {
+        inicio4 = novo;
+        fim4 = novo;
+    } else {
+        fim4->proximo = novo;
+        fim4 = novo;
+    }
+    printf("Musica adicionada.\n");
+}
+
+/* Insere uma musica depois de outra musica informada */
+void inserirDepois(void) {
+    int codigoRef;
+    Musica *atual;
+    Musica *novo = (Musica *) malloc(sizeof(Musica));
+    if (novo == NULL) {
+        printf("Erro de alocacao.\n");
+        return;
+    }
+    printf("Codigo da musica de referencia: ");
+    scanf("%d", &codigoRef);
+    limparBuffer();
+
+    atual = buscarMusicaPorCodigo(codigoRef, NULL);
+    if (atual == NULL) {
+        printf("Musica de referencia nao encontrada.\n");
+        free(novo);
+        return;
+    }
+
+    printf("Codigo: ");
+    scanf("%d", &novo->codigo);
+    limparBuffer();
+    printf("Titulo: ");
+    lerLinha(novo->titulo, sizeof(novo->titulo));
+    printf("Artista: ");
+    lerLinha(novo->artista, sizeof(novo->artista));
+    printf("Duracao (segundos): ");
+    scanf("%d", &novo->duracaoSegundos);
+    limparBuffer();
+
+    /* Ligacoes da insercao apos o no atual (ordem importa) */
+    novo->proximo = atual->proximo;  /* 1) novo aponta para o sucessor */
+    atual->proximo = novo;           /* 2) atual aponta para o novo */
+
+    if (novo->proximo == NULL) {     /* inserido apos o ultimo */
+        fim4 = novo;
+    }
+    printf("Musica inserida apos o codigo %d.\n", codigoRef);
+}
+
+void listarPlaylist(void) {
+    Musica *atual = inicio4;
+    if (atual == NULL) {
+        printf("Playlist vazia.\n");
+        return;
+    }
+    printf("\n--- Playlist ---\n");
+    while (atual != NULL) {
+        printf("%d | %s - %s (%d s)\n",
+               atual->codigo, atual->titulo, atual->artista, atual->duracaoSegundos);
+        atual = atual->proximo;
+    }
+}
+
+void buscarPorArtista(void) {
+    char artista[50];
+    Musica *atual = inicio4;
+    int achou = 0;
+    printf("Artista: ");
+    lerLinha(artista, sizeof(artista));
+    while (atual != NULL) {
+        if (strcmp(atual->artista, artista) == 0) {
+            printf("%d | %s (%d s)\n",
+                   atual->codigo, atual->titulo, atual->duracaoSegundos);
+            achou = 1;
+        }
+        atual = atual->proximo;
+    }
+    if (!achou) {
+        printf("Nenhuma musica desse artista.\n");
+    }
+}
+
+void removerMusica(void) {
+    int codigo;
+    Musica *anterior = NULL;
+    Musica *atual;
+    printf("Codigo a remover: ");
+    scanf("%d", &codigo);
+    limparBuffer();
+
+    atual = buscarMusicaPorCodigo(codigo, &anterior);
+    if (atual == NULL) {
+        printf("Musica nao encontrada.\n");
+        return;
+    }
+
+    if (anterior == NULL) {
+        inicio4 = atual->proximo;
+    } else {
+        anterior->proximo = atual->proximo;
+    }
+    if (atual == fim4) {
+        fim4 = anterior;
+    }
+    free(atual);
+    printf("Musica removida.\n");
+}
+
+void calcularDuracaoTotal(void) {
+    Musica *atual = inicio4;
+    int total = 0;
+    while (atual != NULL) {
+        total += atual->duracaoSegundos;
+        atual = atual->proximo;
+    }
+    printf("Duracao total: %d s (%d min %d s)\n", total, total / 60, total % 60);
+}
+
+/* Move uma musica existente para o inicio */
+void moverParaInicio(void) {
+    int codigo;
+    Musica *anterior = NULL;
+    Musica *atual;
+    printf("Codigo da musica a mover: ");
+    scanf("%d", &codigo);
+    limparBuffer();
+
+    atual = buscarMusicaPorCodigo(codigo, &anterior);
+    if (atual == NULL) {
+        printf("Musica nao encontrada.\n");
+        return;
+    }
+    if (anterior == NULL) {
+        printf("A musica ja esta no inicio.\n");
+        return;
+    }
+
+    /* Desencadeia o no da posicao atual */
+    anterior->proximo = atual->proximo;
+    if (atual == fim4) {
+        fim4 = anterior;             /* era o ultimo: fim volta para anterior */
+    }
+
+    /* Reencadeia no inicio */
+    atual->proximo = inicio4;
+    inicio4 = atual;                 /* inicio passa a apontar para a musica */
+    printf("Musica movida para o inicio.\n");
+}
+
+void liberarLista4(void) {
+    Musica *atual = inicio4;
+    while (atual != NULL) {
+        Musica *proximo = atual->proximo;
+        free(atual);
+        atual = proximo;
+    }
+    inicio4 = NULL;
+    fim4 = NULL;
+}
+
+/* Menu do Exercicio 4 */
+void exercicio4(void) {
+    int opcao;
+    do {
+        printf("\n=== PLAYLIST ===\n");
+        printf("1 - Adicionar musica\n");
+        printf("2 - Inserir depois de uma musica\n");
+        printf("3 - Listar playlist\n");
+        printf("4 - Buscar por artista\n");
+        printf("5 - Remover musica\n");
+        printf("6 - Duracao total\n");
+        printf("7 - Mover musica para o inicio\n");
+        printf("0 - Encerrar\n");
+        printf("Opcao: ");
+        scanf("%d", &opcao);
+        limparBuffer();
+
+        switch (opcao) {
+            case 1: adicionarMusica(); break;
+            case 2: inserirDepois(); break;
+            case 3: listarPlaylist(); break;
+            case 4: buscarPorArtista(); break;
+            case 5: removerMusica(); break;
+            case 6: calcularDuracaoTotal(); break;
+            case 7: moverParaInicio(); break;
+            case 0: liberarLista4(); printf("Encerrando...\n"); break;
+            default: printf("Opcao invalida.\n");
+        }
+    } while (opcao != 0);
+}
+
+
+/* ============================================================
+ * Exercicio 5 - Sistema de entregas de uma transportadora
+ *
+ * Remove TODAS as entregas com estado "Entregue" durante um unico
+ * percurso, tratando elementos consecutivos, e esvazia a lista ao
+ * encerrar.
+ * ============================================================ */
+typedef struct Entrega {
+    int codigo;
+    char cliente[50];
+    char endereco[100];
+    char status[20];
+    float distanciaKm;
+    struct Entrega *proximo;
+} Entrega;
+
+Entrega *inicio5 = NULL;
+Entrega *fim5 = NULL;
+
+void cadastrarEntrega(void) {
+    Entrega *novo = (Entrega *) malloc(sizeof(Entrega));
+    if (novo == NULL) {
+        printf("Erro de alocacao.\n");
+        return;
+    }
+    printf("Codigo: ");
+    scanf("%d", &novo->codigo);
+    limparBuffer();
+    printf("Cliente: ");
+    lerLinha(novo->cliente, sizeof(novo->cliente));
+    printf("Endereco: ");
+    lerLinha(novo->endereco, sizeof(novo->endereco));
+    printf("Status (Pendente/Em rota/Entregue): ");
+    lerLinha(novo->status, sizeof(novo->status));
+    printf("Distancia (km): ");
+    scanf("%f", &novo->distanciaKm);
+    limparBuffer();
+
+    novo->proximo = NULL;
+    if (inicio5 == NULL) {
+        inicio5 = novo;
+        fim5 = novo;
+    } else {
+        fim5->proximo = novo;
+        fim5 = novo;
+    }
+    printf("Entrega cadastrada.\n");
+}
+
+void listarEntregas(void) {
+    Entrega *atual = inicio5;
+    if (atual == NULL) {
+        printf("Nenhuma entrega cadastrada.\n");
+        return;
+    }
+    printf("\n--- Entregas ---\n");
+    while (atual != NULL) {
+        printf("%d | %s | %s | %s | %.1f km\n",
+               atual->codigo, atual->cliente, atual->endereco,
+               atual->status, atual->distanciaKm);
+        atual = atual->proximo;
+    }
+}
+
+void buscarEntrega(void) {
+    int codigo;
+    Entrega *atual = inicio5;
+    printf("Codigo a buscar: ");
+    scanf("%d", &codigo);
+    limparBuffer();
+    while (atual != NULL && atual->codigo != codigo) {
+        atual = atual->proximo;
+    }
+    if (atual == NULL) {
+        printf("Entrega nao encontrada.\n");
+    } else {
+        printf("%s | %s | %s | %.1f km\n",
+               atual->cliente, atual->endereco, atual->status, atual->distanciaKm);
+    }
+}
+
+void alterarEstado(void) {
+    int codigo;
+    Entrega *atual = inicio5;
+    printf("Codigo: ");
+    scanf("%d", &codigo);
+    limparBuffer();
+    while (atual != NULL && atual->codigo != codigo) {
+        atual = atual->proximo;
+    }
+    if (atual == NULL) {
+        printf("Entrega nao encontrada.\n");
+        return;
+    }
+    printf("Novo status: ");
+    lerLinha(atual->status, sizeof(atual->status));
+    printf("Estado alterado.\n");
+}
+
+void contarPendentes(void) {
+    Entrega *atual = inicio5;
+    int total = 0;
+    while (atual != NULL) {
+        if (strcmp(atual->status, "Pendente") == 0) {
+            total++;
+        }
+        atual = atual->proximo;
+    }
+    printf("Entregas pendentes: %d\n", total);
+}
+
+void calcularDistanciaTotal(void) {
+    Entrega *atual = inicio5;
+    float total = 0.0f;
+    while (atual != NULL) {
+        total += atual->distanciaKm;
+        atual = atual->proximo;
+    }
+    printf("Distancia total: %.1f km\n", total);
+}
+
+/* Remove todas as entregas com estado "Entregue" em um unico percurso */
+void removerEntregues(void) {
+    Entrega *atual = inicio5;
+    Entrega *anterior = NULL;
+    int removidos = 0;
+
+    while (atual != NULL) {
+        if (strcmp(atual->status, "Entregue") == 0) {
+            Entrega *removido = atual;
+
+            if (anterior == NULL) {
+                /* Removendo o inicio: inicio avanca */
+                inicio5 = atual->proximo;
+                atual = inicio5;
+            } else {
+                /* Salta o no removido; anterior NAO avanca (pode haver
+                 * outra entrega "Entregue" logo em seguida) */
+                anterior->proximo = atual->proximo;
+                atual = atual->proximo;
+            }
+
+            if (removido == fim5) {
+                fim5 = anterior;      /* removeu o ultimo: atualiza fim */
+            }
+
+            free(removido);          /* libera sem usar o ponteiro depois */
+            removidos++;
+        } else {
+            anterior = atual;        /* so avanca anterior se nao removeu */
+            atual = atual->proximo;
+        }
+    }
+    printf("Entregas removidas: %d\n", removidos);
+}
+
+/* Esvazia completamente a lista (desafio de raciocinio do Exercicio 5) */
+void liberarLista5(Entrega **inicio, Entrega **fim) {
+    Entrega *atual = *inicio;
+    while (atual != NULL) {
+        Entrega *proximo = atual->proximo;  /* guarda o proximo ANTES do free */
+        free(atual);
+        atual = proximo;
+    }
+    *inicio = NULL;
+    *fim = NULL;
+}
+
+/* Menu do Exercicio 5 */
+void exercicio5(void) {
+    int opcao;
+    do {
+        printf("\n=== ENTREGAS ===\n");
+        printf("1 - Cadastrar entrega\n");
+        printf("2 - Listar entregas\n");
+        printf("3 - Buscar por codigo\n");
+        printf("4 - Alterar estado\n");
+        printf("5 - Contar pendentes\n");
+        printf("6 - Distancia total\n");
+        printf("7 - Remover entregas concluidas\n");
+        printf("8 - Esvaziar a lista\n");
+        printf("0 - Encerrar\n");
+        printf("Opcao: ");
+        scanf("%d", &opcao);
+        limparBuffer();
+
+        switch (opcao) {
+            case 1: cadastrarEntrega(); break;
+            case 2: listarEntregas(); break;
+            case 3: buscarEntrega(); break;
+            case 4: alterarEstado(); break;
+            case 5: contarPendentes(); break;
+            case 6: calcularDistanciaTotal(); break;
+            case 7: removerEntregues(); break;
+            case 8: liberarLista5(&inicio5, &fim5); printf("Lista esvaziada.\n"); break;
+            case 0: liberarLista5(&inicio5, &fim5); printf("Encerrando...\n"); break;
+            default: printf("Opcao invalida.\n");
+        }
+    } while (opcao != 0);
+}
+
+
+/* ============================================================
+ * Menu principal - escolhe qual exercicio executar
+ * ============================================================ */
+int main(void) {
+    int opcao;
+    do {
+        printf("\n=== LISTA DE EXERCICIOS (C) ===\n");
+        printf("1 - Exercicio 1: Chamados de suporte\n");
+        printf("2 - Exercicio 2: Imobiliaria\n");
+        printf("3 - Exercicio 3: Estoque\n");
+        printf("4 - Exercicio 4: Playlist\n");
+        printf("5 - Exercicio 5: Entregas\n");
+        printf("0 - Sair\n");
+        printf("Opcao: ");
+        scanf("%d", &opcao);
+        limparBuffer();
+
+        switch (opcao) {
+            case 1: exercicio1(); break;
+            case 2: exercicio2(); break;
+            case 3: exercicio3(); break;
+            case 4: exercicio4(); break;
+            case 5: exercicio5(); break;
+            case 0: printf("Encerrando...\n"); break;
+            default: printf("Opcao invalida.\n");
+        }
+    } while (opcao != 0);
+
+    return 0;
+}
